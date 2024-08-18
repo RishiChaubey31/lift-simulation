@@ -29,6 +29,7 @@ body {
     position: relative;
     height: 100px;
     margin-bottom: 10px;
+    position: relative;
 }
 
 .floor-buttons {
@@ -60,9 +61,42 @@ button.down {
     height: 80px;
     background-color: #00f;
     position: absolute;
-    transition: transform 2s;
+    bottom: 0;
+    transition: transform 2s ease, left 0.5s ease;
     margin-left: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
+.lift::before {
+    content: "";
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    background-color: #a11e1e;
+    z-index: 1;
+    left: 0;
+    transition: width 1s;
+}
+
+.lift::after {
+    content: "";
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    background-color: #079595;
+    z-index: 1;
+    right: 0;
+    transition: width 1s;
+}
+
+.lift.door-open::before {
+    width: 0;
+}
+
+.lift.door-open::after {
+    width: 0;
 }
 
 @media (max-width: 600px) {
@@ -80,3 +114,4 @@ button.down {
         font-size: 12px;
     }
 }
+

@@ -11,7 +11,6 @@ function generateBuilding() {
 
     liftState = Array(liftsCount).fill(1); 
 
-    
     for (let i = 1; i <= floorsCount; i++) {
         const floor = document.createElement('div');
         floor.className = 'floor';
@@ -41,12 +40,12 @@ function generateBuilding() {
         building.appendChild(floor);
     }
 
-    
     for (let i = 0; i < liftsCount; i++) {
         const lift = document.createElement('div');
         lift.className = 'lift';
         lift.dataset.lift = i;
         lift.style.transform = `translateY(0px)`;
+        lift.style.left = `${(i * 70) + 100}px`;
         building.firstChild.appendChild(lift); 
     }
 }
@@ -57,7 +56,6 @@ function requestLift(floor) {
     let closestLift = null;
     let minDistance = Infinity;
 
-    
     lifts.forEach(lift => {
         const liftIndex = parseInt(lift.dataset.lift);
         const currentFloor = liftState[liftIndex];
@@ -79,14 +77,15 @@ function moveLift(lift, liftIndex, targetFloor, targetY) {
     lift.style.transform = `translateY(${targetY}px)`;
     liftState[liftIndex] = targetFloor;
 
-    
-    setTimeout(() => {
-        lift.style.backgroundColor = 'red'; 
-    }, 2000); 
+    lift.addEventListener('transitionend', () => {
+        lift.classList.add('door-open');
 
-    setTimeout(() => {
-        lift.style.backgroundColor = '#00f'; 
-    }, 4500);
+        setTimeout(() => {
+            lift.classList.remove('door-open');
+        }, 2500); 
+    }, { once: true });
 }
 
-generateBuilding(); 
+generateBuilding();
+
+
