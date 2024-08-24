@@ -1,91 +1,241 @@
-document.getElementById('generate').addEventListener('click', generateBuilding);
+let formDiv = document.querySelector("#inputForm");
+let backBtnDiv = document.querySelector("#backBtnDiv");
+let backBtn = document.querySelector("#backBtn");
 
-let liftState = [];
+backBtn.addEventListener("click", () => {
+  backBtnDiv.style.display = "none";
+  formDiv.style.display = "block";
+  renderBuilding(0, 0);
+});
+function generateUI(event) {
+  event.preventDefault();
+  let numFloorsInput = document.querySelector("#num_floors");
+  let numLiftsInput = document.querySelector("#num_lifts");
+  let numFloors = parseInt(numFloorsInput.value);
+  let numLifts = parseInt(numLiftsInput.value);
+  if (validateInput(numFloors, numLifts)) {
+    formDiv.style.display = "none";
+    backBtnDiv.style.display = "block";
+    renderBuilding(numFloors, numLifts);
+  }
+}
+let screenWidth = window.innerWidth;
+let screenHeight = window.innerHeight;
 
-function generateBuilding() {
-    const floorsCount = parseInt(document.getElementById('floors').value);
-    const liftsCount = parseInt(document.getElementById('lifts').value);
-    
-    const building = document.getElementById('building');
-    building.innerHTML = ''; 
+window.addEventListener("load", () => {
+  if (screenWidth < 220) {
+    alert(
+      "Screen size is too small. Lift simulation wouldn't work on this device."
+    );
+  }
+});
+let maxFloors;
+let maxLifts;
+let form = document.querySelector("form");
+form.addEventListener("submit", generateUI);
 
-    liftState = Array(liftsCount).fill(1); 
+function calculateMaxInputValues() {
+  screenWidth = window.innerWidth;
+  screenHeight = window.innerHeight;
+  maxLifts = parseInt(screenWidth / 100) ;
+  if (screenWidth < 500 && screenWidth >= 300) {
+    maxLifts = 2;
+  } else if (screenWidth < 330) {
+    maxLifts = 1;
+  }
 
-    for (let i = 1; i <= floorsCount; i++) {
-        const floor = document.createElement('div');
-        floor.className = 'floor';
-        floor.dataset.floor = i;
+  let numLiftsInput = document.querySelector("#num_lifts");
+  numLiftsInput.max = maxLifts;
+  numLiftsInput.placeholder = `Max ${maxLifts}`;
+}
+window.addEventListener("resize", calculateMaxInputValues);
+window.addEventListener("load", calculateMaxInputValues);
 
-        const floorButtons = document.createElement('div');
-        floorButtons.className = 'floor-buttons';
-
-        if (i !== floorsCount) {
-            const upButton = document.createElement('button');
-            upButton.className = 'up';
-            upButton.innerText = 'Up';
-            upButton.onclick = () => requestLift(i);
-            floorButtons.appendChild(upButton);
-        }
-
-        if (i !== 1) {
-            const downButton = document.createElement('button');
-            downButton.className = 'down';
-            downButton.innerText = 'Down';
-            downButton.onclick = () => requestLift(i);
-            floorButtons.appendChild(downButton);
-        }
-
-        floor.appendChild(floorButtons);
-
-        building.appendChild(floor);
-    }
-
-    for (let i = 0; i < liftsCount; i++) {
-        const lift = document.createElement('div');
-        lift.className = 'lift';
-        lift.dataset.lift = i;
-        lift.style.transform = `translateY(0px)`;
-        lift.style.left = `${(i * 70) + 100}px`;
-        building.firstChild.appendChild(lift); 
-    }
+function validateInput(numFloors, numLifts) {
+  if (numLifts == NaN || numFloors == NaN) {
+    alert(`Input fields can not be empty`);
+    return false;
+  } else if (numFloors <= 0 || numLifts <= 0) {
+    alert("Number of Floors and Number of lifts must be a positive integer,");
+    return false;
+  } else if (numLifts > maxLifts) {
+    alert(`Please enter number of lifts less than or equal to ${maxLifts}.`);
+    return false;
+  } else if (numLifts > numFloors) {
+    alert(
+      `Please enter number of lifts less than or equal to number of floors.`
+    );
+    return false;
+  }
+  return true;
 }
 
-function requestLift(floor) {
-    const lifts = document.querySelectorAll('.lift');
-    const targetY = -(floor - 1) * 110; 
-    let closestLift = null;
-    let minDistance = Infinity;
+function handleButtonClick(event) {
+  floorId = getNumFromIdString(event.id);
+  if (
+    pendingRequests.includes(floorId) == false &&
+    servingRequests.includes(floorId) == false
+  ) {
+    pendingRequests.push(floorId);
+  }
+}
 
-    lifts.forEach(lift => {
-        const liftIndex = parseInt(lift.dataset.lift);
-        const currentFloor = liftState[liftIndex];
-        const distance = Math.abs(currentFloor - floor);
-
-        if (distance < minDistance) {
-            closestLift = lift;
-            minDistance = distance;
-        }
-    });
-
-    if (closestLift) {
-        const liftIndex = parseInt(closestLift.dataset.lift);
-        moveLift(closestLift, liftIndex, floor, targetY);
+function getNearestAvailableLift(floorId) {
+  let nearestLiftDistance = 999;
+  let nearestLift = null;
+  for (let i = 0; i < lifts.length; i++) {
+    if (lifts[i].isBusy == true) {
+      continue;
     }
+    const liftDistance = Math.abs(floorId - lifts[i].currFloor);
+    if (liftDistance < nearestLiftDistance) {
+      nearestLiftDistance = liftDistance;
+      nearestLift = lifts[i];
+    }
+  }
+
+  return nearestLift;
 }
 
-function moveLift(lift, liftIndex, targetFloor, targetY) {
-    lift.style.transform = `translateY(${targetY}px)`;
-    liftState[liftIndex] = targetFloor;
-
-    lift.addEventListener('transitionend', () => {
-        lift.classList.add('door-open');
-
-        setTimeout(() => {
-            lift.classList.remove('door-open');
-        }, 2500); 
-    }, { once: true });
+function moveLift(liftId, floorId) {
+  pendingRequests.shift();
+  servingRequests[liftId - 1] = floorId;
+  const lift = lifts[liftId - 1];
+  lifts[liftId - 1].isBusy = true;
+  const y = (floorId - 1) * liftHeight * -1;
+  const x = Math.abs(floorId - lift.currFloor) * 2;
+  lift.htmlEl.style.transform = `translateY(${y}px)`;
+  lift.htmlEl.style.transition = `${x}s linear`;
+  openCloseLift(liftId, x * 1000);
+  setTimeout(() => {
+    lifts[liftId - 1].currFloor = floorId;
+    lifts[liftId - 1].isBusy = false;
+  }, x * 1000 + 5000);
 }
 
-generateBuilding();
+function openCloseLift(liftId, duration) {
+  setTimeout(() => {
+    openLift(liftId);
+  }, duration);
+  setTimeout(() => {
+    closeLift(liftId);
+  }, duration + 2500);
+  setTimeout(() => {
+    servingRequests[liftId - 1] = null;
+  }, duration + 5000);
+}
 
+function openLift(liftId) {
+  lifts[liftId - 1].htmlEl
+    .querySelector(`#left-door${liftId}`)
+    .classList.remove(`left-door-close`);
+  lifts[liftId - 1].htmlEl
+    .querySelector(`#right-door${liftId}`)
+    .classList.remove(`right-door-close`);
+  lifts[liftId - 1].htmlEl
+    .querySelector(`#left-door${liftId}`)
+    .classList.add(`left-door-open`);
+  lifts[liftId - 1].htmlEl
+    .querySelector(`#right-door${liftId}`)
+    .classList.add(`right-door-open`);
+}
 
+function closeLift(liftId) {
+  lifts[liftId - 1].htmlEl
+    .querySelector(`#left-door${liftId}`)
+    .classList.remove(`left-door-open`);
+  lifts[liftId - 1].htmlEl
+    .querySelector(`#right-door${liftId}`)
+    .classList.remove(`right-door-open`);
+  lifts[liftId - 1].htmlEl
+    .querySelector(`#left-door${liftId}`)
+    .classList.add(`left-door-close`);
+  lifts[liftId - 1].htmlEl
+    .querySelector(`#right-door${liftId}`)
+    .classList.add(`right-door-close`);
+}
+
+function liftController() {
+  if (pendingRequests.length > 0) {
+    const nearestLift = getNearestAvailableLift(pendingRequests[0]);
+    if (nearestLift) {
+      liftId = getNumFromIdString(nearestLift.htmlEl.id);
+      moveLift(liftId, pendingRequests[0]);
+    }
+  }
+}
+
+function renderBuilding(no_of_floors, no_of_lifts) {
+  let building = document.querySelector("#building");
+  building.innerHTML = "";
+  for (let i = no_of_floors; i >= 1; i--) {
+    let floor = document.createElement("div");
+    floor.classList.add("floor");
+    let liftLabels = document.createElement("div");
+    liftLabels.classList.add("lift-labels");
+    let floorLabel = document.createElement("span");
+    floorLabel.textContent = "Floor " + i;
+    liftLabels.appendChild(floorLabel);
+    let buttonsContainer = document.createElement("div");
+    buttonsContainer.classList.add("buttons-container");
+    if (i !== no_of_floors) {
+      let upBtn = document.createElement("button");
+      upBtn.id = "upBtn" + i;
+      upBtn.classList.add("upBtn");
+      upBtn.onclick = () => handleButtonClick(upBtn);
+      upBtn.innerHTML = "↑";
+      buttonsContainer.appendChild(upBtn);
+    }
+    if (i !== 1) {
+      let downBtn = document.createElement("button");
+      downBtn.id = "downBtn" + i;
+      downBtn.classList.add("downBtn");
+      downBtn.onclick = () => handleButtonClick(downBtn);
+      downBtn.innerHTML = "↓";
+      buttonsContainer.appendChild(downBtn);
+    }
+    liftLabels.appendChild(buttonsContainer);
+    floor.appendChild(liftLabels);
+    if (i === 1) {
+      for (let j = 1; j <= no_of_lifts; j++) {
+        let lift = document.createElement("div");
+        lift.id = "lift" + j;
+        lift.classList.add("lift");
+        let leftDoor = document.createElement("div");
+        leftDoor.id = "left-door" + j;
+        leftDoor.classList.add("left-door");
+        let rightDoor = document.createElement("div");
+        rightDoor.id = "right-door" + j;
+        rightDoor.classList.add("right-door");
+        lift.appendChild(leftDoor);
+        lift.appendChild(rightDoor);
+        floor.appendChild(lift);
+      }
+    }
+    building.appendChild(floor);
+  }
+
+  lifts = Array.from(document.querySelectorAll(".lift"), (el) => ({
+    htmlEl: el,
+    isBusy: false,
+    currFloor: 1,
+  }));
+
+  const liftHeight = 90.8; // units in px
+  pendingRequests = [];
+  servingRequests = Array(lifts.length).fill(null);
+}
+
+let lifts = [];
+
+const liftHeight = 90.8; // units in px
+let pendingRequests = [];
+let servingRequests = [];
+
+setInterval(liftController, 50);
+
+function getNumFromIdString(string) {
+  const regex = /\d+/;
+  const match = regex.exec(string);
+  return match ? parseInt(match[0], 10) : null;
+}
