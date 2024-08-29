@@ -102,16 +102,23 @@ function moveLift(liftId, floorId) {
   servingRequests[liftId - 1] = floorId;
   const lift = lifts[liftId - 1];
   lifts[liftId - 1].isBusy = true;
+
   const y = (floorId - 1) * liftHeight * -1;
-  const x = Math.abs(floorId - lift.currFloor) * 2;
+
+  // Further increase lift speed by reducing the time factor 'x'
+  const x = Math.abs(floorId - lift.currFloor) * 0.5; // Reduced even more for faster movement
+
   lift.htmlEl.style.transform = `translateY(${y}px)`;
   lift.htmlEl.style.transition = `${x}s linear`;
+
   openCloseLift(liftId, x * 1000);
   setTimeout(() => {
     lifts[liftId - 1].currFloor = floorId;
     lifts[liftId - 1].isBusy = false;
   }, x * 1000 + 5000);
 }
+
+
 
 function openCloseLift(liftId, duration) {
   setTimeout(() => {
