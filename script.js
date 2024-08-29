@@ -32,29 +32,16 @@ window.addEventListener("load", () => {
   }
 });
 
-let maxFloors;
-let maxLifts;
 let form = document.querySelector("form");
 form.addEventListener("submit", generateUI);
 
 function calculateMaxInputValues() {
-  screenWidth = window.innerWidth;
-  screenHeight = window.innerHeight;
-  maxLifts = parseInt(screenWidth / 100);
-  if (screenWidth < 500 && screenWidth >= 300) {
-    maxLifts = 2;
-  } else if (screenWidth < 330) {
-    maxLifts = 1;
-  }
-
   let numFloorsInput = document.querySelector("#num_floors");
   let numLiftsInput = document.querySelector("#num_lifts");
   
   // Add placeholders
   numFloorsInput.placeholder = "Enter number of floors";
-  numLiftsInput.placeholder = `Max ${maxLifts} lifts`;
-  
-  numLiftsInput.max = maxLifts;
+  numLiftsInput.placeholder = "Enter number of lifts";
 }
 
 window.addEventListener("resize", calculateMaxInputValues);
@@ -65,10 +52,7 @@ function validateInput(numFloors, numLifts) {
     alert(`Input fields can not be empty`);
     return false;
   } else if (numFloors <= 0 || numLifts <= 0) {
-    alert("Number of Floors and Number of lifts must be a positive integer,");
-    return false;
-  } else if (numLifts > maxLifts) {
-    alert(`Please enter number of lifts less than or equal to ${maxLifts}.`);
+    alert("Number of Floors and Number of lifts must be a positive integer.");
     return false;
   } else if (numLifts > numFloors) {
     alert(
@@ -78,6 +62,8 @@ function validateInput(numFloors, numLifts) {
   }
   return true;
 }
+
+// The rest of the code remains the same
 
 function handleButtonClick(event) {
   floorId = getNumFromIdString(event.id);
@@ -114,7 +100,7 @@ function moveLift(liftId, floorId) {
 
   const y = (floorId - 1) * liftHeight * -1;
 
-  // Change lift speed to 2 seconds per floor
+  // Lift speed is 2 seconds per floor
   const x = Math.abs(floorId - lift.currFloor) * 2;
 
   lift.htmlEl.style.transform = `translateY(${y}px)`;
