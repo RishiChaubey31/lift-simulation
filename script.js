@@ -7,6 +7,7 @@ backBtn.addEventListener("click", () => {
   formDiv.style.display = "block";
   renderBuilding(0, 0);
 });
+
 function generateUI(event) {
   event.preventDefault();
   let numFloorsInput = document.querySelector("#num_floors");
@@ -19,6 +20,7 @@ function generateUI(event) {
     renderBuilding(numFloors, numLifts);
   }
 }
+
 let screenWidth = window.innerWidth;
 let screenHeight = window.innerHeight;
 
@@ -29,6 +31,7 @@ window.addEventListener("load", () => {
     );
   }
 });
+
 let maxFloors;
 let maxLifts;
 let form = document.querySelector("form");
@@ -37,22 +40,28 @@ form.addEventListener("submit", generateUI);
 function calculateMaxInputValues() {
   screenWidth = window.innerWidth;
   screenHeight = window.innerHeight;
-  maxLifts = parseInt(screenWidth / 100) ;
+  maxLifts = parseInt(screenWidth / 100);
   if (screenWidth < 500 && screenWidth >= 300) {
     maxLifts = 2;
   } else if (screenWidth < 330) {
     maxLifts = 1;
   }
 
+  let numFloorsInput = document.querySelector("#num_floors");
   let numLiftsInput = document.querySelector("#num_lifts");
+  
+  // Add placeholders
+  numFloorsInput.placeholder = "Enter number of floors";
+  numLiftsInput.placeholder = `Max ${maxLifts} lifts`;
+  
   numLiftsInput.max = maxLifts;
-  numLiftsInput.placeholder = `Max ${maxLifts}`;
 }
+
 window.addEventListener("resize", calculateMaxInputValues);
 window.addEventListener("load", calculateMaxInputValues);
 
 function validateInput(numFloors, numLifts) {
-  if (numLifts == NaN || numFloors == NaN) {
+  if (isNaN(numLifts) || isNaN(numFloors)) {
     alert(`Input fields can not be empty`);
     return false;
   } else if (numFloors <= 0 || numLifts <= 0) {
@@ -73,8 +82,8 @@ function validateInput(numFloors, numLifts) {
 function handleButtonClick(event) {
   floorId = getNumFromIdString(event.id);
   if (
-    pendingRequests.includes(floorId) == false &&
-    servingRequests.includes(floorId) == false
+    !pendingRequests.includes(floorId) &&
+    !servingRequests.includes(floorId)
   ) {
     pendingRequests.push(floorId);
   }
@@ -84,7 +93,7 @@ function getNearestAvailableLift(floorId) {
   let nearestLiftDistance = 999;
   let nearestLift = null;
   for (let i = 0; i < lifts.length; i++) {
-    if (lifts[i].isBusy == true) {
+    if (lifts[i].isBusy) {
       continue;
     }
     const liftDistance = Math.abs(floorId - lifts[i].currFloor);
@@ -105,8 +114,8 @@ function moveLift(liftId, floorId) {
 
   const y = (floorId - 1) * liftHeight * -1;
 
-  // Further increase lift speed by reducing the time factor 'x'
-  const x = Math.abs(floorId - lift.currFloor) * 0.5; // Reduced even more for faster movement
+  // Change lift speed to 2 seconds per floor
+  const x = Math.abs(floorId - lift.currFloor) * 2;
 
   lift.htmlEl.style.transform = `translateY(${y}px)`;
   lift.htmlEl.style.transition = `${x}s linear`;
@@ -117,8 +126,6 @@ function moveLift(liftId, floorId) {
     lifts[liftId - 1].isBusy = false;
   }, x * 1000 + 5000);
 }
-
-
 
 function openCloseLift(liftId, duration) {
   setTimeout(() => {
