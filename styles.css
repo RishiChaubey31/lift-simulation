@@ -9,6 +9,7 @@ body {
   height: 100vh;
   margin: 20px auto;
   background-image: linear-gradient(to bottom,black, rgb(13, 22, 152));
+  background-attachment: fixed;
 }
 
 .inputForm {
@@ -88,6 +89,8 @@ input[type="number"] {
   flex-direction: column;
   background-color: rgb(57, 18, 155);
   padding: 5px auto;
+  color: white;
+  font-weight: bold;
 }
 
 .buttons-container {
