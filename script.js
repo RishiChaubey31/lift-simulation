@@ -32,29 +32,18 @@ window.addEventListener("load", () => {
   }
 });
 
-let maxFloors;
-let maxLifts;
 let form = document.querySelector("form");
 form.addEventListener("submit", generateUI);
 
 function calculateMaxInputValues() {
-  screenWidth = window.innerWidth;
-  screenHeight = window.innerHeight;
-  maxLifts = parseInt(screenWidth / 100);
-  if (screenWidth < 500 && screenWidth >= 300) {
-    maxLifts = 2;
-  } else if (screenWidth < 330) {
-    maxLifts = 1;
-  }
+  // Removed maxLifts calculation based on screen width
 
   let numFloorsInput = document.querySelector("#num_floors");
   let numLiftsInput = document.querySelector("#num_lifts");
-  
+
   // Add placeholders
   numFloorsInput.placeholder = "Enter number of floors";
-  numLiftsInput.placeholder = `Max ${maxLifts} lifts`;
-  
-  numLiftsInput.max = maxLifts;
+  numLiftsInput.placeholder = "Enter number of lifts"; // No limit on the number of lifts
 }
 
 window.addEventListener("resize", calculateMaxInputValues);
@@ -62,25 +51,20 @@ window.addEventListener("load", calculateMaxInputValues);
 
 function validateInput(numFloors, numLifts) {
   if (isNaN(numLifts) || isNaN(numFloors)) {
-    alert(`Input fields can not be empty`);
+    alert("Input fields cannot be empty");
     return false;
   } else if (numFloors <= 0 || numLifts <= 0) {
-    alert("Number of Floors and Number of lifts must be a positive integer,");
-    return false;
-  } else if (numLifts > maxLifts) {
-    alert(`Please enter number of lifts less than or equal to ${maxLifts}.`);
+    alert("Number of floors and number of lifts must be a positive integer");
     return false;
   } else if (numLifts > numFloors) {
-    alert(
-      `Please enter number of lifts less than or equal to number of floors.`
-    );
+    alert("Please enter a number of lifts less than or equal to the number of floors.");
     return false;
   }
   return true;
 }
 
 function handleButtonClick(event) {
-  floorId = getNumFromIdString(event.id);
+  let floorId = getNumFromIdString(event.id);
   if (
     !pendingRequests.includes(floorId) &&
     !servingRequests.includes(floorId)
@@ -173,7 +157,7 @@ function liftController() {
   if (pendingRequests.length > 0) {
     const nearestLift = getNearestAvailableLift(pendingRequests[0]);
     if (nearestLift) {
-      liftId = getNumFromIdString(nearestLift.htmlEl.id);
+      let liftId = getNumFromIdString(nearestLift.htmlEl.id);
       moveLift(liftId, pendingRequests[0]);
     }
   }
@@ -182,16 +166,25 @@ function liftController() {
 function renderBuilding(no_of_floors, no_of_lifts) {
   let building = document.querySelector("#building");
   building.innerHTML = "";
+  
   for (let i = no_of_floors; i >= 1; i--) {
     let floor = document.createElement("div");
     floor.classList.add("floor");
+    
+    // Calculate the width based on the number of lifts
+    const floorWidth = 100 + (no_of_lifts * 100); // Adjust the base width if needed
+    floor.style.width = `${floorWidth}px`;
+
     let liftLabels = document.createElement("div");
     liftLabels.classList.add("lift-labels");
+    
     let floorLabel = document.createElement("span");
     floorLabel.textContent = "Floor " + i;
     liftLabels.appendChild(floorLabel);
+    
     let buttonsContainer = document.createElement("div");
     buttonsContainer.classList.add("buttons-container");
+    
     if (i !== no_of_floors) {
       let upBtn = document.createElement("button");
       upBtn.id = "upBtn" + i;
@@ -200,6 +193,7 @@ function renderBuilding(no_of_floors, no_of_lifts) {
       upBtn.innerHTML = "↑";
       buttonsContainer.appendChild(upBtn);
     }
+    
     if (i !== 1) {
       let downBtn = document.createElement("button");
       downBtn.id = "downBtn" + i;
@@ -208,24 +202,30 @@ function renderBuilding(no_of_floors, no_of_lifts) {
       downBtn.innerHTML = "↓";
       buttonsContainer.appendChild(downBtn);
     }
+    
     liftLabels.appendChild(buttonsContainer);
     floor.appendChild(liftLabels);
+    
     if (i === 1) {
       for (let j = 1; j <= no_of_lifts; j++) {
         let lift = document.createElement("div");
         lift.id = "lift" + j;
         lift.classList.add("lift");
+        
         let leftDoor = document.createElement("div");
         leftDoor.id = "left-door" + j;
         leftDoor.classList.add("left-door");
+        
         let rightDoor = document.createElement("div");
         rightDoor.id = "right-door" + j;
         rightDoor.classList.add("right-door");
+        
         lift.appendChild(leftDoor);
         lift.appendChild(rightDoor);
         floor.appendChild(lift);
       }
     }
+    
     building.appendChild(floor);
   }
 
@@ -235,10 +235,10 @@ function renderBuilding(no_of_floors, no_of_lifts) {
     currFloor: 1,
   }));
 
-  const liftHeight = 90.8; // units in px
   pendingRequests = [];
   servingRequests = Array(lifts.length).fill(null);
 }
+
 
 let lifts = [];
 
@@ -253,4 +253,3 @@ function getNumFromIdString(string) {
   const match = regex.exec(string);
   return match ? parseInt(match[0], 10) : null;
 }
-

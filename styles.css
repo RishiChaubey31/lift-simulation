@@ -75,16 +75,17 @@ input[type="number"] {
 
 .floor {
   width: 100%;
-  background-color: rgb(57, 18, 155);
+  background-color: rgba(57, 18, 155, 0);
   display: flex;
   flex-direction: row;
   height: 90px;
-  border-bottom: 1px solid rgb(230, 173, 173);
+  border-bottom: 1px solid rgba(206, 190, 204, 0.968);
+  position: relative;
 }
 
 .lift-labels {
-  min-width: 15%;
-  width: 100px;
+  min-width: 100px;
+  max-width: 100px;
   display: flex;
   flex-direction: column;
   background-color: rgb(57, 18, 155);
@@ -140,8 +141,8 @@ button:hover {
 .left-door,
 .right-door {
   height: 100%;
-  width: 50%;
-  background-color: rgb(255, 21, 0);
+  width: 100%;
+  background:linear-gradient(to bottom,red,yellow);
   overflow: hidden;
   border: 1px solid rgb(0, 0, 0);
 }
@@ -170,4 +171,23 @@ button:hover {
   .lift {
     width: 50px;
   }
+}
+.lift {
+  width: calc(100% );
+  max-width: 80px; /* Set a reasonable maximum width */
+  min-width: 50px; /* Set a minimum width to prevent them from becoming too thin */
+  height: 90px; /* Adjust as necessary */
+  border: 2px solid rgb(5, 3, 3); /* Adjust the border as needed */
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  background-color: #561574;
+}
+.lift-container {
+  width: 100%; /* Make sure the container takes up the full width */
+  background-color: rgb(205, 175, 205);
+  display: flex;
+  justify-content: space-between; /* Adjust spacing between lifts */
+  align-items: center; /* Center align the lifts vertically */
+  position: relative;
 }
