@@ -191,3 +191,6 @@ button:hover {
   align-items: center; /* Center align the lifts vertically */
   position: relative;
 }
+.upBtn.active-up, .downBtn.active-down {
+  background-color: #ff0000;
+}
