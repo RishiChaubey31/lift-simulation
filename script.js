@@ -58,9 +58,6 @@ function validateInput(numFloors, numLifts) {
   } else if (numFloors <= 0 || numLifts <= 0) {
     alert("Number of floors and number of lifts must be a positive integer");
     return false;
-  } else if (numLifts > numFloors) {
-    alert("Please enter a number of lifts less than or equal to the number of floors.");
-    return false;
   }
   return true;
 }
@@ -258,5 +255,7 @@ function getNumFromIdString(string) {
 
 // Add this CSS to your stylesheet
 /*
-
+.upBtn.active-up, .downBtn.active-down {
+  background-color: #ff0000;
+}
 */
