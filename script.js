@@ -80,42 +80,79 @@ function getNearestAvailableLift(request) {
   let nearestLiftDistance = 999;
   let nearestLift = null;
   for (let i = 0; i < lifts.length; i++) {
-    if (lifts[i].isBusy) {
+    let lift = lifts[i];
+    if (lift.isBusy) {
+      // Check if the busy lift is moving in the same direction and can stop at the requested floor
+      if (canStopAtFloor(lift, request)) {
+        return lift;
+      }
       continue;
     }
-    const liftDistance = Math.abs(request.floor - lifts[i].currFloor);
+    const liftDistance = Math.abs(request.floor - lift.currFloor);
     if (liftDistance < nearestLiftDistance) {
       nearestLiftDistance = liftDistance;
-      nearestLift = lifts[i];
+      nearestLift = lift;
     }
   }
 
   return nearestLift;
 }
 
+// Check if a busy lift can stop at the requested floor
+function canStopAtFloor(lift, request) {
+  let liftRequest = servingRequests[lift.htmlEl.id.slice(4) - 1];
+  if (!liftRequest) return false;
+
+  if (request.direction === 'up') {
+    return liftRequest.direction === 'up' && 
+           request.floor > lift.currFloor && 
+           request.floor < liftRequest.floor;
+  } else {
+    return liftRequest.direction === 'down' && 
+           request.floor < lift.currFloor && 
+           request.floor > liftRequest.floor;
+  }
+}
+
 // Move the lift
 function moveLift(liftId, request) {
   pendingRequests = pendingRequests.filter(req => !(req.floor === request.floor && req.direction === request.direction));
-  servingRequests[liftId - 1] = request;
   const lift = lifts[liftId - 1];
-  lifts[liftId - 1].isBusy = true;
+  
+  if (!lift.isBusy) {
+    servingRequests[liftId - 1] = request;
+    lift.isBusy = true;
+  } else {
+    // Add intermediate stop
+    lift.intermediateStops.push(request);
+    lift.intermediateStops.sort((a, b) => request.direction === 'up' ? a.floor - b.floor : b.floor - a.floor);
+  }
 
-  const y = (request.floor - 1) * liftHeight * -1;
+  const moveToFloor = (floor) => {
+    const y = (floor - 1) * liftHeight * -1;
+    const x = Math.abs(floor - lift.currFloor) * 2;
 
-  // Lift speed: 2 seconds per floor
-  const x = Math.abs(request.floor - lift.currFloor) * 2;
+    lift.htmlEl.style.transform = `translateY(${y}px)`;
+    lift.htmlEl.style.transition = `${x}s linear`;
 
-  lift.htmlEl.style.transform = `translateY(${y}px)`;
-  lift.htmlEl.style.transition = `${x}s linear`;
+    openCloseLift(liftId, x * 1000);
+    setTimeout(() => {
+      lift.currFloor = floor;
+      // Remove active class from button
+      let btn = document.querySelector(`#${request.direction}Btn${floor}`);
+      if (btn) btn.classList.remove('active-' + request.direction);
 
-  openCloseLift(liftId, x * 1000);
-  setTimeout(() => {
-    lifts[liftId - 1].currFloor = request.floor;
-    lifts[liftId - 1].isBusy = false;
-    // Remove active class from button
-    let btn = document.querySelector(`#${request.direction}Btn${request.floor}`);
-    if (btn) btn.classList.remove('active-' + request.direction);
-  }, x * 1000 + 5000);
+      if (lift.intermediateStops.length > 0) {
+        let nextStop = lift.intermediateStops.shift();
+        moveToFloor(nextStop.floor);
+      } else {
+        lift.isBusy = false;
+        servingRequests[liftId - 1] = null;
+      }
+    }, x * 1000 + 5000);
+  };
+
+  moveToFloor(request.floor);
 }
 
 // Open and close lift doors
@@ -126,9 +163,6 @@ function openCloseLift(liftId, duration) {
   setTimeout(() => {
     closeLift(liftId);
   }, duration + 2500);
-  setTimeout(() => {
-    servingRequests[liftId - 1] = null;
-  }, duration + 5000);
 }
 
 // Open lift doors
@@ -231,6 +265,7 @@ function renderBuilding(no_of_floors, no_of_lifts) {
     htmlEl: el,
     isBusy: false,
     currFloor: 1,
+    intermediateStops: []
   }));
 
   pendingRequests = [];
